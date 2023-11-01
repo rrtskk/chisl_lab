@@ -21,15 +21,16 @@ void ResidualV(float** a, float* x, float* b, float* F, int n) {
 	}
 	cout << "Residual vector:" << endl;
 	Print1(F, n);
+}
 
-	// calculate norm of residual vector
-	float norm = abs(F[0]);
+float Norm(float* F, int n, float norm) {
 	for (int i = 1; i < n; i++) {
 		if (abs(F[i]) > norm) {
 			norm = F[i];
 		}
 	}
 	cout << "Norm of residual vector = " << norm << endl;
+	return norm;
 }
 
 int main() {
@@ -43,6 +44,10 @@ int main() {
 	float** a = new float* [n];
 	for (int i = 0; i < n; i++)
 		a[i] = new float[n];
+	//init copy of matrix
+	float** a1 = new float* [n];
+	for (int i = 0; i < n; i++)
+		a1[i] = new float[n];
 
 	// enter elements of matrix
 	cout << "Enter elements of matrix: \n";
@@ -52,6 +57,12 @@ int main() {
 		}
 	}
 	cout << endl;
+	//copy matrix
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			a1[i][j]= a[i][j];
+		}
+	}
 
 	// init vector
 	float* b = new float[n];
@@ -77,36 +88,76 @@ int main() {
 
 	//Solve norm of residual vector
 	ResidualV(a, x, b, F, n);
+	cout << endl;
 
-	//// init residual vector
-	//float* F = new float[n];
+	// calculate norm of residual vector
+	float norm = fabs(F[0]);
+	Norm(F, n, norm);
 
-	//// calculation of the residual vector
-	//for (int i = 0; i < n; i++) {
-	//	F[i] = 0;
-	//	for (int j = 0; j < n; j++) {
-	//		F[i] += (a[i][j] * x[j]);
-	//	}
-	//	F[i] -= b[i];
-	//}
-	//cout << "Residual vector:" << endl;
-	//Print1(F, n);
+	//init 2nd vector of solutions
+	float* x1 = new float[n];
+	for (int i = 0; i < n; i++) {
+		x1[i] = 0;
+	}
 
-	//// calculate norm of residual vector
-	//float norm = abs(F[0]);
-	//for (int i = 1; i < n; i++) {
-	//	if (abs(F[i]) > norm) {
-	//		norm = F[i];
-	//	}
-	//}
-	//cout << "Norm of residual vector = " << norm << endl;
+	//init vector Ax
+	float* Ax = new float[n];
+	for (int i = 0; i < n; i++) {
+		Ax[i] = 0;
+	}
+
+	//solve vector Ax
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			Ax[i] += a1[i][j] * x[j];
+		}
+	}
+	cout << "Vector Ax= ";
+	Print1(Ax, n);
+
+	//solve GM for Ax instead of b
+	Gaussian_Method(n, a1, Ax, x1);
+
+	//init 2nd residual vector
+	float* F1 = new float[n];
+
+	//solve error of method
+	ResidualV(a1, x1, Ax, F1, n);
+
+	//make some action to use formula
+	for (int i = 0; i < n; i++) {
+		x1[i] -= x[i];
+	}
+
+	//init norm of edited vector x1 and vector x
+	float norm_minus = x1[0];
+	float normx = x[0];
+
+	//solve norm for edited vector x1
+	norm_minus=Norm(x1, n, norm_minus);
+
+	//solve norm for vector x
+	normx=Norm(x, n, normx);
+
+	//solve error
+	float err;
+	err = norm_minus / normx;
+	cout << "Error of method= " << err;
 
 	delete[]b;
 	delete[]x;
 	delete[]F;
+	delete[]x1;
+	delete[]Ax;
+	delete[]F1;
 
 	for (int i = 0; i < n; i++) {
 		delete[] a[i];
 	}
 	delete[] a;
+
+	for (int i = 0; i < n; i++) {
+		delete[] a1[i];
+	}
+	delete[] a1;
 }
